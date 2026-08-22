@@ -1,118 +1,131 @@
 #!/bin/bash
 
 # ==========================================
-# DISKNOGAMERZ VPS BOT - ENTERPRISE INSTALLER
+# DISKNOGAMERZ VPS BOT - ENTERPRISE SUITE
 # ==========================================
 
 PROJECT_DIR="/root/vps-bot"
 REPO_URL="https://github.com/ando1178431-dot/vps-bot.git"
 
-# Text Styling Colors
+# Advanced TrueColor & Styling Definitions
+RESTORE='\033[0m'
+BLACK='\033[0;30m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+B_RED='\033[1;31m'
+B_GREEN='\033[1;32m'
+B_CYAN='\033[1;36m'
+BG_BLUE='\033[44m'
+BG_DARK='\033[40m'
 
 clear
-echo -e "${CYAN}====================================================${NC}"
-echo -e "${CYAN}        DISKNOGAMERZ ENTERPRISE HOSTING SUITE       ${NC}"
-echo -e "${CYAN}====================================================${NC}"
 
-# 1. System Dependency & Root Check
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}[x] Error: This installer must be run as root/sudo!${NC}"
-    exit 1
-fi
+# Gorgeous ASCII Header Banner
+echo -e "${B_CYAN}================================================================${RESTORE}"
+echo -e "${BG_BLUE}${WHITE}          ⚡ DISKNOGAMERZ ENTERPRISE HOSTING PANEL ⚡           ${RESTORE}"
+echo -e "${B_CYAN}================================================================${RESTORE}"
+echo -e "${PURPLE}  [i] Target Node Core: ${WHITE}Ubuntu Linux / Docker Engine${RESTORE}"
+echo -e "${PURPLE}  [i] Author Framework: ${WHITE}Disknogamerz Automation Daemon${RESTORE}"
+echo -e "${B_CYAN}----------------------------------------------------------------${RESTORE}"
 
-echo -e "${YELLOW}[*] Checking required system packages (git, python3, pip, docker)...${NC}"
-apt-get update -y > /dev/null 2>&1
-for pkg in git python3 python3-pip docker.io curl; do
-    if ! command -v $pkg &> /dev/null; then
-        echo -e "${YELLOW}[+] Installing missing dependency: $pkg...${NC}"
-        apt-get install -y $pkg > /dev/null 2>&1
-    fi
-done
-
-# Start Docker daemon if inactive
-systemctl start docker > /dev/null 2>&1
-
-# 2. Directory & Git Synchronization
+# 1. Directory & Git Synchronization with Aesthetic Output
 if [ ! -d "$PROJECT_DIR" ]; then
-    echo -e "${YELLOW}[+] Cloning Disknogamerz repository into $PROJECT_DIR...${NC}"
-    git clone "$REPO_URL" "$PROJECT_DIR"
+    echo -e "${YELLOW}[+] Deploying workspace repository into ${WHITE}$PROJECT_DIR${YELLOW}...${RESTORE}"
+    git clone "$REPO_URL" "$PROJECT_DIR" > /dev/null 2>&1
 else
-    echo -e "${YELLOW}[+] Repository found. Pulling latest code updates...${NC}"
+    echo -e "${GREEN}[✔] Existing project directory detected. Syncing updates...${RESTORE}"
     cd "$PROJECT_DIR" || exit
-    git pull origin main || git pull origin master
+    git pull origin main || git pull origin master > /dev/null 2>&1
 fi
 
 cd "$PROJECT_DIR" || exit
 
-# 3. Python Environment & Requirements Setup
-echo -e "${YELLOW}[*] Installing/updating Python modules from requirements.txt...${NC}"
+# 2. Python Environment & Requirements Setup
+echo -e "${YELLOW}[*] Validating dependencies & updating environment packages...${RESTORE}"
 python3 -m pip install --upgrade pip > /dev/null 2>&1
 if [ -f "requirements.txt" ]; then
     pip3 install -r requirements.txt > /dev/null 2>&1
 else
-    echo -e "${RED}[x] Warning: requirements.txt not found! Installing core dependencies manually...${NC}"
     pip3 install discord.py psutil requests aiohttp rsa > /dev/null 2>&1
 fi
 
-# 4. Safe Bot Execution (Background Daemon Mode)
-echo -e "${YELLOW}[*] Terminating any legacy bot instances...${NC}"
-pkill -f main.py > /dev/null 2>&1
+# 3. Configuration Check
+if [ ! -f "config.json" ]; then
+    echo -e "\n${B_RED}[!] CRITICAL WARNING: No active config.json found!${RESTORE}"
+    echo -e "${YELLOW}[*] Launching configuration wizard to link your bot token...${RESTORE}"
+    python3 installer.py
+fi
 
-echo -e "${YELLOW}[*] Launching bot background daemon...${NC}"
+# 4. Safe Bot Execution (Background Daemon Mode)
+echo -e "${CYAN}[*] Flushing legacy background processes and starting bot core...${RESTORE}"
+pkill -f main.py > /dev/null 2>&1
 nohup python3 main.py > bot.log 2>&1 &
 
-echo -e "${GREEN}====================================================${NC}"
-echo -e "${GREEN}      SUCCESS: BOT IS ONLINE AND RUNNING!           ${NC}"
-echo -e "${GREEN}====================================================${NC}"
-echo -e "Logs are streaming to: ${CYAN}$PROJECT_DIR/bot.log${NC}\n"
+echo -e "\n${B_GREEN}╔══════════════════════════════════════════════════════════════╗${RESTORE}"
+echo -e "${B_GREEN}║             🚀 BOT IS ONLINE & HEALTHY IN BACKGROUND        ║${RESTORE}"
+echo -e "${B_GREEN}╚══════════════════════════════════════════════════════════════╝${RESTORE}"
+echo -e "📄 Live Stream File: ${CYAN}$PROJECT_DIR/bot.log${RESTORE}\n"
 
-# 5. Interactive Manager Loop (Keeps the script alive and functional)
+# 5. Interactive Colorful Manager Loop
 while true; do
-    echo -e "${CYAN}--- DISKNOGAMERZ VPS CONTROL PANEL ---${NC}"
-    echo "1) View Live Bot Logs"
-    echo "2) Restart Bot Process"
-    echo "3) Pull Latest GitHub Updates & Restart"
-    echo "4) Check Docker Container Status"
-    echo "5) Exit to Shell"
-    read -p "Select an option [1-5]: " choice
+    echo -e "${B_CYAN}┌──────────────────────────────────────────────────────────────┐${RESTORE}"
+    echo -e "${B_CYAN}│                   🛡️  CONTROL CENTER MENU                    │${RESTORE}"
+    echo -e "${B_CYAN}├──────────────────────────────────────────────────────────────┤${RESTORE}"
+    echo -e "${B_CYAN}│${RESTORE}  ${GREEN}[1]${RESTORE} 📋 View Live Bot Console Logs                          ${B_CYAN}│${RESTORE}"
+    echo -e "${B_CYAN}│${RESTORE}  ${GREEN}[2]${RESTORE} 🔄 Restart Bot Daemon Instance                         ${B_CYAN}│${RESTORE}"
+    echo -e "${B_CYAN}│${RESTORE}  ${GREEN}[3]${RESTORE} 🌐 Pull GitHub Updates & Re-deploy                     ${B_CYAN}│${RESTORE}"
+    echo -e "${B_CYAN}│${RESTORE}  ${GREEN}[4]${RESTORE} 🐳 Inspect Active Docker Containers                    ${B_CYAN}│${RESTORE}"
+    echo -e "${B_CYAN}│${RESTORE}  ${GREEN}[5]${RESTORE} ⚙️  Configure / Re-link Bot Token (installer.py)       ${B_CYAN}│${RESTORE}"
+    echo -e "${B_CYAN}│${RESTORE}  ${GREEN}[6]${RESTORE} 🚪 Exit to Shell (Bot keeps running safely)          ${B_CYAN}│${RESTORE}"
+    echo -e "${B_CYAN}└──────────────────────────────────────────────────────────────┘${RESTORE}"
+    
+    echo -ne "${YELLOW}🎛️ Select control index [1-6]: ${RESTORE}"
+    read -r choice
 
     case $choice in
         1)
-            echo -e "${YELLOW}[*] Showing last 30 lines of bot.log (Ctrl+C to exit log view):${NC}"
-            sleep 1
+            echo -e "\n${PURPLE}=== [ LAST 30 LINES OF BOT LOGS ] ===${RESTORE}"
             tail -n 30 bot.log
-            echo ""
+            echo -e "${PURPLE}=====================================${RESTORE}\n"
             ;;
         2)
-            echo -e "${YELLOW}[*] Restarting bot...${NC}"
+            echo -e "\n${YELLOW}[*] Restarting bot core process...${RESTORE}"
             pkill -f main.py
             nohup python3 main.py > bot.log 2>&1 &
-            echo -e "${GREEN}[✔] Bot restarted successfully!${NC}\n"
+            sleep 1
+            echo -e "${B_GREEN}[✔] Bot core restarted successfully!${RESTORE}\n"
             ;;
         3)
-            echo -e "${YELLOW}[*] Pulling from GitHub and updating dependencies...${NC}"
+            echo -e "\n${YELLOW}[*] Pulling latest repository code from GitHub...${RESTORE}"
             git pull origin main || git pull origin master
             pip3 install -r requirements.txt > /dev/null 2>&1
             pkill -f main.py
             nohup python3 main.py > bot.log 2>&1 &
-            echo -e "${GREEN}[✔] Update complete and bot restarted!${NC}\n"
+            echo -e "${B_GREEN}[✔] System updated, dependencies refreshed, & bot restarted!${RESTORE}\n"
             ;;
         4)
-            echo -e "${YELLOW}[*] Active Docker containers on this node:${NC}"
+            echo -e "\n${PURPLE}=== [ ACTIVE DOCKER CONTAINERS ] ===${RESTORE}"
             docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo ""
+            echo -e "${PURPLE}====================================${RESTORE}\n"
             ;;
         5)
-            echo -e "${CYAN}Exiting manager panel. Bot remains running safely in background.${NC}"
+            echo -e "\n${YELLOW}[*] Opening configuration setup utility...${RESTORE}"
+            python3 installer.py
+            pkill -f main.py
+            nohup python3 main.py > bot.log 2>&1 &
+            echo -e "${B_GREEN}[✔] New token profile saved and bot re-launched!${RESTORE}\n"
+            ;;
+        6)
+            echo -e "\n${CYAN}Exiting panel manager. Your bot remains fully secure in the background.${RESTORE}"
             exit 0
             ;;
         *)
-            echo -e "${RED}[x] Invalid option. Please choose between 1 and 5.${NC}\n"
+            echo -e "\n${B_RED}[x] Invalid option selection! Please pick a number from 1 to 6.${RESTORE}\n"
             ;;
     esac
 done
