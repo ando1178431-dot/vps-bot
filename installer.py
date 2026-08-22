@@ -28,9 +28,12 @@ def setup_bot():
     clear_screen()
     print_banner()
     print("\n--- INITIAL BOT CONFIGURATION ---")
-    token = input("Enter your Discord Bot Token: ").strip()
-    owner_id = input("Enter your Discord Admin/Owner User ID: ").strip()
-    prefix = input("Enter Bot Command Prefix (e.g., !): ").strip() or "!"
+    try:
+        token = input("Enter your Discord Bot Token: ").strip()
+        owner_id = input("Enter your Discord Admin/Owner User ID: ").strip()
+        prefix = input("Enter Bot Command Prefix (e.g., !): ").strip() or "!"
+    except (KeyboardInterrupt, EOFError):
+        return
 
     config = {
         "token": token,
@@ -45,7 +48,8 @@ def setup_bot():
     if os.path.exists("docker-compose.yml"):
         subprocess.run(["docker", "compose", "up", "-d", "--build"])
     else:
-        print("[!] Warning: docker-compose.yml not found.")
+        print("[!] Warning: docker-compose.yml not found. Starting main.py directly...")
+        subprocess.Popen(["python3", "main.py"])
     
     input("\nPress Enter to go to the Management Dashboard...")
     manage_vps_dashboard()
@@ -56,10 +60,13 @@ def manage_bot_files():
     print("\n--- MANAGE BOT & EXECUTE COMMANDS ---")
     print(" [1] Pull latest updates from GitHub")
     print(" [2] View live bot container logs")
-    print(" [3] Restart Bot Container")
+    print(" [3] Restart Bot / Main Service")
     print(" [4] Back to Dashboard")
     
-    choice = input("\nSelect an option [1-4]: ").strip()
+    try:
+        choice = input("\nSelect an option [1-4]: ").strip()
+    except (KeyboardInterrupt, EOFError):
+        return manage_vps_dashboard()
     
     if choice == "1":
         print("[*] Pulling latest code from GitHub...")
@@ -74,7 +81,7 @@ def manage_bot_files():
             pass
         manage_bot_files()
     elif choice == "3":
-        print("[*] Restarting bot container...")
+        print("[*] Restarting services...")
         subprocess.run(["docker", "restart", "disknogamerz-bot"])
         print("[+] Bot restarted!")
         time.sleep(2)
@@ -93,8 +100,12 @@ def manage_vps_config():
     print(f"Current Owner ID: {config.get('owner_id', 'Not Set')}")
     print(f"Current Prefix: {config.get('prefix', '!')}")
     
-    print("\nDo you want to update these credentials? (y/n)")
-    if input("> ").lower() == 'y':
+    try:
+        choice = input("\nDo you want to update these credentials? (y/n): ").strip().lower()
+    except (KeyboardInterrupt, EOFError):
+        return manage_vps_dashboard()
+
+    if choice == 'y':
         setup_bot()
     else:
         manage_vps_dashboard()
@@ -110,7 +121,10 @@ def manage_vps_dashboard():
         print(" [3] Exit to Terminal")
         print("=" * 50)
         
-        choice = input("Select an option [1-3]: ").strip()
+        try:
+            choice = input("Select an option [1-3]: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            sys.exit(0)
         
         if choice == "1":
             manage_bot_files()
@@ -128,14 +142,20 @@ def main_menu():
         print(" [2] Exit")
         print("=" * 50)
         
-        choice = input("Select an option [1-2]: ").strip()
+        try:
+            choice = input("Select an option [1-2]: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            sys.exit(0)
         
         if choice == "1":
             if os.path.exists(CONFIG_FILE):
                 print("\n[!] Configuration already exists!")
                 print(" [1] Reconfigure / Make New")
                 print(" [2] Open Management Dashboard")
-                sub = input("Select option [1-2]: ").strip()
+                try:
+                    sub = input("Select option [1-2]: ").strip()
+                except (KeyboardInterrupt, EOFError):
+                    continue
                 if sub == "1":
                     setup_bot()
                 else:
