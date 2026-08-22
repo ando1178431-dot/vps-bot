@@ -43,13 +43,21 @@ def setup_bot():
     save_config(config)
     
     print("\n[+] Configuration saved successfully!")
-    print("[+] Building environment & starting bot container...")
     
-    if os.path.exists("docker-compose.yml"):
+    # Try Docker first, otherwise fallback to running Python directly
+    print("[*] Attempting to start bot...")
+    docker_check = subprocess.run(["docker", "ps"], capture_output=True, text=True)
+    
+    if docker_check.returncode == 0 and os.path.exists("docker-compose.yml"):
+        print("[+] Docker detected. Starting via Docker Compose...")
         subprocess.run(["docker", "compose", "up", "-d", "--build"])
     else:
-        print("[!] Warning: docker-compose.yml not found. Starting main.py directly...")
-        subprocess.Popen(["python3", "main.py"])
+        print("[!] Docker unavailable. Launching bot directly with Python (Background mode)...")
+        # Install requirements just in case
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "-q"])
+        # Run main.py in background using nohup or screen equivalent, or just start it
+        subprocess.Popen([sys.executable, "main.py"])
+        print("[+] Bot started successfully in background!")
     
     input("\nPress Enter to go to the Management Dashboard...")
     manage_vps_dashboard()
@@ -59,12 +67,11 @@ def manage_bot_files():
     print_banner()
     print("\n--- MANAGE BOT & EXECUTE COMMANDS ---")
     print(" [1] Pull latest updates from GitHub")
-    print(" [2] View live bot container logs")
-    print(" [3] Restart Bot / Main Service")
-    print(" [4] Back to Dashboard")
+    print(" [2] View live bot status / restart")
+    print(" [3] Back to Dashboard")
     
     try:
-        choice = input("\nSelect an option [1-4]: ").strip()
+        choice = input("\nSelect an option [1-3]: ").strip()
     except (KeyboardInterrupt, EOFError):
         return manage_vps_dashboard()
     
@@ -74,19 +81,13 @@ def manage_bot_files():
         input("\nUpdate complete. Press Enter to continue...")
         manage_bot_files()
     elif choice == "2":
-        print("[*] Streaming logs (Press Ctrl+C to exit logs)...")
-        try:
-            subprocess.run(["docker", "logs", "-f", "disknogamerz-bot"])
-        except KeyboardInterrupt:
-            pass
-        manage_bot_files()
-    elif choice == "3":
-        print("[*] Restarting services...")
-        subprocess.run(["docker", "restart", "disknogamerz-bot"])
-        print("[+] Bot restarted!")
+        print("[*] Restarting Python bot service...")
+        os.system("pkill -f main.py")
+        subprocess.Popen([sys.executable, "main.py"])
+        print("[+] Bot service restarted and brought online!")
         time.sleep(2)
         manage_bot_files()
-    elif choice == "4":
+    elif choice == "3":
         manage_vps_dashboard()
     else:
         manage_bot_files()
@@ -116,8 +117,8 @@ def manage_vps_dashboard():
         print_banner()
         print("\n             BOT SUCCESSFULLY CREATED!")
         print("=" * 50)
-        print(" [1] Manage Bot & Execute Commands (Logs, Files, Updates)")
-        print(" [2] Manage VPS Bot Config (Change Tokens & Versions)")
+        print(" [1] Manage Bot & Execute Commands")
+        print(" [2] Manage VPS Bot Config (Change Tokens)")
         print(" [3] Exit to Terminal")
         print("=" * 50)
         
@@ -131,7 +132,7 @@ def manage_vps_dashboard():
         elif choice == "2":
             manage_vps_config()
         elif choice == "3":
-            print("Exiting manager. Bot is running safely in background!")
+            print("Exiting manager. Bot is running safely!")
             sys.exit(0)
 
 def main_menu():
