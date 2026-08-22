@@ -24,6 +24,31 @@ def save_config(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=4)
 
+def install_dependencies():
+    print("[*] Installing required Python dependencies...")
+    subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], stdout=subprocess.DEVNULL)
+    if os.path.exists("requirements.txt"):
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+    else:
+        subprocess.run([sys.executable, "-m", "pip", "install", "discord.py", "psutil", "requests", "aiohttp"])
+
+def start_bot_service():
+    install_dependencies()
+    
+    # Check if Docker is available and active
+    docker_check = subprocess.run(["docker", "ps"], capture_output=True, text=True)
+    
+    if docker_check.returncode == 0 and os.path.exists("docker-compose.yml"):
+        print("[+] Docker environment active. Starting via Docker Compose...")
+        subprocess.run(["docker", "compose", "up", "-d", "--build"])
+    else:
+        print("[!] Standard Docker unavailable. Running bot directly via Python...")
+        # Kill any existing old instances to prevent duplicates
+        os.system("pkill -f main.py")
+        # Start main.py in the background safely
+        subprocess.Popen([sys.executable, "main.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print("[+] Bot is now online and running in the background!")
+
 def setup_bot():
     clear_screen()
     print_banner()
@@ -43,21 +68,7 @@ def setup_bot():
     save_config(config)
     
     print("\n[+] Configuration saved successfully!")
-    
-    # Try Docker first, otherwise fallback to running Python directly
-    print("[*] Attempting to start bot...")
-    docker_check = subprocess.run(["docker", "ps"], capture_output=True, text=True)
-    
-    if docker_check.returncode == 0 and os.path.exists("docker-compose.yml"):
-        print("[+] Docker detected. Starting via Docker Compose...")
-        subprocess.run(["docker", "compose", "up", "-d", "--build"])
-    else:
-        print("[!] Docker unavailable. Launching bot directly with Python (Background mode)...")
-        # Install requirements just in case
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "-q"])
-        # Run main.py in background using nohup or screen equivalent, or just start it
-        subprocess.Popen([sys.executable, "main.py"])
-        print("[+] Bot started successfully in background!")
+    start_bot_service()
     
     input("\nPress Enter to go to the Management Dashboard...")
     manage_vps_dashboard()
@@ -67,7 +78,7 @@ def manage_bot_files():
     print_banner()
     print("\n--- MANAGE BOT & EXECUTE COMMANDS ---")
     print(" [1] Pull latest updates from GitHub")
-    print(" [2] View live bot status / restart")
+    print(" [2] Restart Bot Service")
     print(" [3] Back to Dashboard")
     
     try:
@@ -78,13 +89,12 @@ def manage_bot_files():
     if choice == "1":
         print("[*] Pulling latest code from GitHub...")
         subprocess.run(["git", "pull"])
+        install_dependencies()
         input("\nUpdate complete. Press Enter to continue...")
         manage_bot_files()
     elif choice == "2":
-        print("[*] Restarting Python bot service...")
-        os.system("pkill -f main.py")
-        subprocess.Popen([sys.executable, "main.py"])
-        print("[+] Bot service restarted and brought online!")
+        print("[*] Restarting bot service...")
+        start_bot_service()
         time.sleep(2)
         manage_bot_files()
     elif choice == "3":
@@ -115,7 +125,7 @@ def manage_vps_dashboard():
     while True:
         clear_screen()
         print_banner()
-        print("\n             BOT SUCCESSFULLY CREATED!")
+        print("\n             BOT SUCCESSFULLY MANAGED!")
         print("=" * 50)
         print(" [1] Manage Bot & Execute Commands")
         print(" [2] Manage VPS Bot Config (Change Tokens)")
