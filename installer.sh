@@ -1,52 +1,31 @@
 #!/bin/bash
 
-# Colors for Disknogamerz GUI styling
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# Define project directory
+PROJECT_DIR="/root/vps-bot"
 
-clear
-echo -e "${BLUE}==================================================${NC}"
-echo -e "${GREEN}        DISKNOGAMERZ VPS BOT INSTALLER            ${NC}"
-echo -e "${BLUE}==================================================${NC}"
+echo "=========================================="
+echo "    DISKNOGAMERZ VPS BOT AUTO-INSTALLER   "
+echo "=========================================="
 
-# Step 1: Check & Install Dependencies
-echo -e "\n[*] Checking system dependencies..."
-if ! command -v python3 &> /dev/null; then
-    echo "[!] Python3 not found. Installing..."
-    sudo apt update && sudo apt install -y python3 python3-pip git
-else
-    echo "[+] Python3 is installed."
+# Check if project folder exists, if not clone it
+if [ ! -d "$PROJECT_DIR" ]; then
+    echo "[+] Cloning repository..."
+    git clone https://github.com/ando1178431-dot/vps-bot.git "$PROJECT_DIR"
 fi
 
-if ! command -v docker &> /dev/null; then
-    echo "[!] Docker not found. Installing Docker..."
-    curl -fsSL https://get.docker.com -o get-docker.sh
-    sudo sh get-docker.sh
-    sudo usermod -aG docker $USER
-else
-    echo "[+] Docker is installed."
-fi
+# Navigate into project directory
+cd "$PROJECT_DIR" || exit
 
-# Step 2: Set up Project Directory
-INSTALL_DIR="/opt/disknogamerz-vps-bot"
-echo -e "\n[*] Setting up workspace in $INSTALL_DIR..."
-sudo mkdir -p $INSTALL_DIR
-sudo chown -R $USER:$USER $INSTALL_DIR
+echo "[+] Pulling latest updates from GitHub..."
+git pull origin main
 
-# Clone or pull files from GitHub repo
-if [ -d "$INSTALL_DIR/.git" ]; then
-    echo "[*] Updating existing repository..."
-    cd $INSTALL_DIR
-    git pull
-else
-    echo "[*] Downloading files from GitHub..."
-    git clone https://github.com/ando1178431-dot/vps-bot.git $INSTALL_DIR
-    cd $INSTALL_DIR
-fi
+echo "[+] Installing/updating Python dependencies..."
+pip3 install -r requirements.txt
 
-# Step 3: Launch Python GUI
-echo -e "\n${GREEN}[+] Launching Disknogamerz Choice-able GUI...${NC}"
-sleep 2
-python3 installer.py
+echo "[+] Restarting bot safely..."
+pkill -f main.py
+nohup python3 main.py > bot.log 2>&1 &
+
+echo "=========================================="
+echo "     BOT SUCCESSFULLY STARTED & UPDATED!    "
+echo "=========================================="
